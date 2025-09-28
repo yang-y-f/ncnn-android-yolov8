@@ -140,7 +140,7 @@ static void generate_grids_and_stride(const int target_w, const int target_h, st
 static void generate_proposals(std::vector<GridAndStride> grid_strides, const ncnn::Mat& pred, float prob_threshold, std::vector<Object>& objects)
 {
     const int num_points = grid_strides.size();
-    const int num_class = 80;
+    const int num_class = pred.w - 4 * 16; // infer class count from tensor shape when possible
     const int reg_max_1 = 16;
 
     for (int i = 0; i < num_points; i++)
@@ -357,15 +357,14 @@ int Yolo::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_th
 int Yolo::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 {
     static const char* class_names[] = {
-        "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
-        "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
-        "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
-        "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
-        "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
-        "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
-        "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone",
-        "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear",
-        "hair drier", "toothbrush"
+        "class0", "class1", "class2", "class3", "class4", "class5", "class6", "class7", "class8", "class9",
+        "class10", "class11", "class12", "class13", "class14", "class15", "class16", "class17", "class18", "class19",
+        "class20", "class21", "class22", "class23", "class24", "class25", "class26", "class27", "class28", "class29",
+        "class30", "class31", "class32", "class33", "class34", "class35", "class36", "class37", "class38", "class39",
+        "class40", "class41", "class42", "class43", "class44", "class45", "class46", "class47", "class48", "class49",
+        "class50", "class51", "class52", "class53", "class54", "class55", "class56", "class57", "class58", "class59",
+        "class60", "class61", "class62", "class63", "class64", "class65", "class66", "class67", "class68", "class69",
+        "class70", "class71", "class72", "class73", "class74", "class75", "class76", "class77", "class78", "class79"
     };
 
     static const unsigned char colors[19][3] = {
@@ -407,7 +406,9 @@ int Yolo::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         cv::rectangle(rgb, obj.rect, cc, 2);
 
         char text[256];
-        sprintf(text, "%s %.1f%%", class_names[obj.label], obj.prob * 100);
+        const int num_known = sizeof(class_names) / sizeof(class_names[0]);
+        const char* cname = (obj.label >= 0 && obj.label < num_known) ? class_names[obj.label] : "cls";
+        sprintf(text, "%s %.1f%%", cname, obj.prob * 100);
 
         int baseLine = 0;
         cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
