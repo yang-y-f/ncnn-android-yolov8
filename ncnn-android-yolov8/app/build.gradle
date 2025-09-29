@@ -10,12 +10,25 @@ android {
 
         minSdkVersion 24
         targetSdkVersion 34
+
+        // Enable shared libc++ runtime in native build
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
     }
 
+    // Path to CMakeLists
     externalNativeBuild {
         cmake {
             path file('src/main/jni/CMakeLists.txt')
         }
+    }
+
+    // 有些第三方库也带自己的 libc++_shared.so，防止重复文件冲突
+    packagingOptions {
+        pickFirst "**/libc++_shared.so"
     }
 }
 
