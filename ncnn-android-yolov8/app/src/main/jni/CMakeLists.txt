@@ -15,6 +15,17 @@ if(NOT ncnn_DIR)
 endif()
 find_package(ncnn REQUIRED)
 
+# 目标
 add_library(yolov8ncnn SHARED yolov8ncnn.cpp yolo.cpp ndkcamera.cpp)
 
-target_link_libraries(yolov8ncnn ncnn ${OpenCV_LIBS} camera2ndk mediandk)
+# 明确链接共享 libc++ 避免缺失符号
+find_library(cpp_shared NAMES c++_shared REQUIRED)
+
+# 链接库
+target_link_libraries(yolov8ncnn
+        PRIVATE
+        ncnn
+        ${OpenCV_LIBS}
+        camera2ndk
+        mediandk
+        ${cpp_shared})
