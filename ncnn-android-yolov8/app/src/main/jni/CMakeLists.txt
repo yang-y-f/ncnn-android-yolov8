@@ -2,10 +2,17 @@ project(yolov8ncnn)
 
 cmake_minimum_required(VERSION 3.10)
 
-set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/opencv-mobile-4.5.1-android/sdk/native/jni)
+set(THIRD_PARTY_DIR ${CMAKE_SOURCE_DIR}/.. CACHE PATH "Third party root directory")
+set(OpenCV_DIR ${OpenCV_DIR} CACHE PATH "OpenCV DIR override")
+if(NOT OpenCV_DIR)
+    set(OpenCV_DIR ${THIRD_PARTY_DIR}/jni/opencv-mobile/sdk/native/jni)
+endif()
 find_package(OpenCV REQUIRED core imgproc)
 
-set(ncnn_DIR ${CMAKE_SOURCE_DIR}/ncnn-20220420-android-vulkan/${ANDROID_ABI}/lib/cmake/ncnn)
+set(ncnn_DIR ${ncnn_DIR} CACHE PATH "ncnn DIR override")
+if(NOT ncnn_DIR)
+    set(ncnn_DIR ${THIRD_PARTY_DIR}/jni/ncnn/${ANDROID_ABI}/lib/cmake/ncnn)
+endif()
 find_package(ncnn REQUIRED)
 
 add_library(yolov8ncnn SHARED yolov8ncnn.cpp yolo.cpp ndkcamera.cpp)

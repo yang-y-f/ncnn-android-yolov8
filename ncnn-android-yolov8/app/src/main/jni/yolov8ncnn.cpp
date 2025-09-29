@@ -230,6 +230,42 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_yolov8ncnn_Yolov8Ncnn_loadModel(JNIE
     return JNI_TRUE;
 }
 
+// public native boolean loadModelByName(AssetManager mgr, String modelToken, int cpugpu);
+JNIEXPORT jboolean JNICALL Java_com_tencent_yolov8ncnn_Yolov8Ncnn_loadModelByName(JNIEnv* env, jobject thiz, jobject assetManager, jstring modelToken, jint cpugpu)
+{
+    if (cpugpu < 0 || cpugpu > 1)
+    {
+        return JNI_FALSE;
+    }
+
+    AAssetManager* mgr = AAssetManager_fromJava(env, assetManager);
+
+    const char* token_cstr = env->GetStringUTFChars(modelToken, 0);
+
+    int target_size = 640; // default for most custom models
+    bool use_gpu = (int)cpugpu == 1;
+
+    {
+        ncnn::MutexLockGuard g(lock);
+
+        if (use_gpu && ncnn::get_gpu_count() == 0)
+        {
+            delete g_yolo;
+            g_yolo = 0;
+        }
+        else
+        {
+            if (!g_yolo)
+                g_yolo = new Yolo;
+            g_yolo->load(mgr, token_cstr, target_size, (const float[]){103.53f, 116.28f, 123.675f}, (const float[]){1/255.f,1/255.f,1/255.f}, use_gpu);
+        }
+    }
+
+    env->ReleaseStringUTFChars(modelToken, token_cstr);
+
+    return JNI_TRUE;
+}
+
 // public native boolean openCamera(int facing);
 JNIEXPORT jboolean JNICALL Java_com_tencent_yolov8ncnn_Yolov8Ncnn_openCamera(JNIEnv* env, jobject thiz, jint facing)
 {

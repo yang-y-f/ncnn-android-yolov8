@@ -29,8 +29,14 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.Spinner;
 
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.widget.ArrayAdapter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback
 {
@@ -43,6 +49,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
     private Spinner spinnerCPUGPU;
     private int current_model = 0;
     private int current_cpugpu = 0;
+    private ArrayList<String> modelTokens = new ArrayList<>();
 
     private SurfaceView cameraView;
 
@@ -76,6 +83,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
         });
 
         spinnerModel = (Spinner) findViewById(R.id.spinnerModel);
+        // build model list dynamically from assets: yolov8*.param
+        modelTokens = scanModels();
+        if (modelTokens.isEmpty()) {
+            modelTokens.add("n");
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, modelTokens);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerModel.setAdapter(adapter);
         spinnerModel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
@@ -116,11 +131,34 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 
     private void reload()
     {
-        boolean ret_init = yolov8ncnn.loadModel(getAssets(), current_model, current_cpugpu);
+        boolean ret_init = false;
+        if (current_model >= 0 && current_model < modelTokens.size()) {
+            ret_init = yolov8ncnn.loadModelByName(getAssets(), modelTokens.get(current_model), current_cpugpu);
+        }
         if (!ret_init)
         {
             Log.e("MainActivity", "yolov8ncnn loadModel failed");
         }
+    }
+
+    private ArrayList<String> scanModels()
+    {
+        ArrayList<String> tokens = new ArrayList<>();
+        try {
+            String[] names = getAssets().list("");
+            if (names != null) {
+                Pattern p = Pattern.compile("^yolov8(.+)\\.param$");
+                for (String n : names) {
+                    Matcher m = p.matcher(n);
+                    if (m.find()) {
+                        String t = m.group(1);
+                        if (t != null && t.length() > 0) tokens.add(t);
+                    }
+                }
+            }
+        } catch (Exception ignore) {}
+        Collections.sort(tokens);
+        return tokens;
     }
 
     @Override
